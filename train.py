@@ -27,7 +27,7 @@ from flax.training import checkpoints
 import gin
 import jax
 from jax import numpy as jnp
-from jax import random
+from jax import random, pmap
 import numpy as np
 import tensorflow as tf
 
@@ -49,9 +49,6 @@ flags.DEFINE_string('data_dir', None, 'input data directory.')
 flags.DEFINE_multi_string('gin_bindings', None, 'Gin parameter bindings.')
 flags.DEFINE_multi_string('gin_configs', (), 'Gin config files.')
 FLAGS = flags.FLAGS
-
-jax.config.parse_flags_with_absl()
-
 
 def _log_to_tensorboard(writer: tensorboard.SummaryWriter,
                         state: model_utils.TrainState,
@@ -98,6 +95,8 @@ def _log_histograms(writer: tensorboard.SummaryWriter, model: models.NerfModel,
 
 
 def main(argv):
+  jax.config.parse_flags_with_absl()
+
   tf.config.experimental.set_visible_devices([], 'GPU')
   del argv
   logging.info('*** Starting experiment')
@@ -141,7 +140,7 @@ def main(argv):
       f.write(config_str)
 
   logging.info('Starting host %d. There are %d hosts : %s', jax.process_index(),
-               jax.process_count(), str(jax.process_indexs()))
+               jax.process_count(), str(jax.process_index()))
   logging.info('Found %d accelerator devices: %s.', jax.local_device_count(),
                str(jax.local_devices()))
   logging.info('Found %d total devices: %s.', jax.device_count(),
